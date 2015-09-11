@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="lib/assets/jquery-2.1.4.js"></script>
+    <script src="lib/assets/underscore.js"></script>
+    <script src="lib/assets/backbone.js"></script>
+    <script src="lib/assets/backbone.localStorage.js"></script>
+    <script src="lib/assets/handlebars-v4.0.2.js"></script>
+    <title></title>
+</head>
+<body>
+<section id="todoapp">
+    <header id="header">
+        <h1>Todos</h1>
+        <input type="text" id="new-todo" placeholder="What needs to be done?"/>
+    </header>
+    <section id="main">
+        <ul id="todo-list"></ul>
+    </section>
+</section>
+<script type="text/x-handlebars-template" id="item-template">
+    <div class="view">
+        <input type="checkbox" class="toggle"/>
+        <label>{{title}}</label>
+    </div>
+</script>
+<script type="text/javascript">
+    var app = {};
+    app.Todo = Backbone.Model.extend({
+        defaults: {
+            title: '',
+            completed: false
+        }
+    });
+    app.TodoList = Backbone.Collection.extend({
+        model: app.Todo,
+        localStorage: new Store('backbone-todo')
+    });
+    app.todoList = new app.TodoList();
+
+    //var todoList = new app.TodoList();
+
+    app.TodoView = Backbone.View.extend({
+        tagName: 'li',
+        template: Handlebars.compile($('#item-template').html()),
+        initialize: function () {
+        },
+        render: function () {
+            this.$el.html(this.template(this.model.toJSON()));
+            return this;
+        }
+    });
+
+    app.AppView = Backbone.View.extend({
+        el: '#todoapp',
+        initialize: function () {
+            this.input = this.$('#new-todo');
+            app.todoList.on('add', this.addOne, this);
+            app.todoList.on('reset', this.addAll, this);
+            app.todoList.fetch();
+        },
+        events: {
+            'keypress #new-todo': 'createTodoOnEnter'
+        },
+        createTodoOnEnter: function (e) {
+            if (e.which != 13 || !this.input.val().trim()) {
+                return;
+            }
+            app.todoList.create(this.newAttributes());
+            this.input.val('');
+        },
+        addOne: function (todo) {
+            var view = new app.TodoView({model: todo});
+            $('#todo-list').append(view.render().el);
+        },
+        addAll: function () {
+            this.input.html('');
+            app.todoList.each(this.addOne, this);
+        },
+        newAttributes: function () {
+            return {
+                title: this.input.val().trim(),
+                completed: false
+            }
+        }
+    });
+
+    app.appView = new app.AppView();
+</script>
+</body>
+</html>
