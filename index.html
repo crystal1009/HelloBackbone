@@ -37,6 +37,7 @@
         <input type="checkbox" class="toggle" {{#if completed}}checked{{/if}}/>
         <label>{{title}}</label>
         <input type="text" class="edit" value="{{title}}"/>
+        <button class="destroy">remove</button>
     </div>
 </script>
 <script type="text/javascript">
@@ -60,15 +61,22 @@
         template: Handlebars.compile($('#item-template').html()),
         initialize: function () {
             this.model.on('change', this.render, this);
+
+            // if associated model is destroyed, remove this whole dom element.
+            this.model.on('destroy', this.remove, this);
         },
         events: {
             'dblclick label': 'edit',
             'keypress .edit': 'updateOnEnter',
             'blur .edit': 'close',
-            'click .toggle': 'toggleCompleted'
+            'click .toggle': 'toggleCompleted',
+            'click .destroy': 'destroy'
         },
         toggleCompleted: function () {
             this.model.save({completed: !this.model.get('completed')});
+        },
+        destroy: function () {
+            this.model.destroy();
         },
         edit: function () {
             this.$el.addClass('editing');
